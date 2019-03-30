@@ -2,9 +2,9 @@
 Manages a basic 3DS backup file library and creates pages for each game, with QR code to reload your own games. Requires your 3DS to be altered, and able to run FBI.  It comes with the initialization script I made that manages the library, uses a basic web server taken from here (https://gallery.technet.microsoft.com/scriptcenter/Powershell-Webserver-74dcf466#content) and uses the New-QR function taken from here (https://gallery.technet.microsoft.com/scriptcenter/f615d7e8-ed15-498d-b7cc-078377f523bf). 
 
 ## Instructions
-1. Download miishop.ps1, Start-WebServer.ps1, and start.bat
+1. Download `miishop.ps1`, `Start-WebServer.ps1`, and `start.bat`
 2. Copy all 3 files to the folder where you keep the 3DS CIAs from games you own (check your favorite serch engine how to do that)
-3. Right click on start.bat and run it
+3. Right click on start.bat and select run as administrator (required to open the web ports to serve the webpages)
 
 ## Known Issues
 + Webserver crashing - On some transferrs it seems to crash, as I didn't write the webserver I haven't been brave enough to jump in and try to fix it or switch to a different simple server
