@@ -4,7 +4,7 @@ Manages a basic 3DS backup file library and creates pages for each game, with QR
 ## Instructions
 1. Download `miishop.ps1`, `Start-WebServer.ps1`, and `start.bat`
 2. Copy all 3 files to the folder where you keep the 3DS CIAs from games you own (check your favorite serch engine how to do that)
-3. Right click on start.bat and select run as administrator (required to open the web ports to serve the webpages)
+3. Right click on start.bat and select run as administrator (required to open the ports to serve the webpages)
 
 ## Known Issues
 + Webserver crashing - On some transferrs it seems to crash, as I didn't write the webserver I haven't been brave enough to jump in and try to fix it or switch to a different simple server
