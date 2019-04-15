@@ -3,8 +3,7 @@ Manages a basic 3DS backup file library and creates pages for each game, with QR
 
 
 ## Screenshot
-![miiShop v0.2 UI](https://imgur.com/64eoQnD)
-
+![alt text](https://imgur.com/64eoQnD "miiShop v0.2 UI")
 
 ## Instructions
 1. Download `images` folder, `miishop.ps1`, `PoSHServer-Standalone.ps1`, and `start.bat` (installer script coming soon)
