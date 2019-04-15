@@ -1,4 +1,8 @@
-﻿function New-QR { 
+﻿# BIG thanks to Matt Painter for this code on Script Cener in Microsoft Tech Net - 'https://gallery.technet.microsoft.com/scriptcenter/f615d7e8-ed15-498d-b7cc-078377f523bf'
+
+# Requires the internet because of this call, maybe see if I can find a way to build a QR code without.  But that's way off at this point.
+
+function New-QR { 
 <# 
     .Synopsis 
        Create New Quick Response Code 
@@ -287,44 +291,42 @@
     } 
 } 
 
+
+#This is the function that buils the QR codes, renames the game files and probably get boxart/game info...maybe
 function get-cias  ([string] $ipAddress)
 {
+    # Get all Cia's in the game directory
     $fileType='*.cia'
     $ciafiles = Get-ChildItem "$PSScriptRoot\*" -Include $fileType
     if($ciafiles.Count -gt 0 )
     {    
+        #Move, Sanatize and sort the games
         Write-Output ('{2} Starting processing, found {0} {1} files' -f $ciafiles.Count,$fileType,$(Get-Date -Format s))    
         foreach ($ciafile in $ciafiles)
         {        
+            #move games to the cias directory
             Move-Item -Path $ciafile.FullName -Destination "$PSScriptRoot\cias\"     
             $newFileLocation = ('{0}\cias\{1}' -f $PSScriptRoot,$ciafile.Name)
             $newname = $ciafile.Name.replace(' ','_')
             $newname = $newname.replace("'","")
             $newname = $newname.replace('[','')
             $newname = $newname.replace(']','')
+            #Clean up game name for proper link building based on what FBI can read
             rename-item -NewName (('{0}\cias\{1}' -f $PSScriptRoot,$newname)) -Path $newFileLocation
             Write-Output ('{0} Making QR code for {1}' -f $(Get-Date -Format s),$newname)
             New-QR -Message ('http://{0}:8080/cias/{1}' -f $ipAddress,$newname) -fileName ('{0}\qr\{1}.png' -f $PSScriptRoot,$newname)|out-null
-            '<html>'|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Force
-            '<header>'|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
-            ('<title>Game QR code - {0}</title>' -f $newname)|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
-            '</header>'|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
-            '<body>'|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
-            ('<h1>{0}</h1>' -f $ciafile.Name) | out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
-            ('<img src="../qr/{1}.png" />'-f $ipAddress,$ciafile.Name)|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
-            #('<img src="{0}" style="border: none; height: 85%;" />'-f $newFileLocation)|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$ciafile.Name) -Append -Force
-            '</body>'|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
-            '</html>'|out-file -FilePath ('{0}\html\3ds_{1}.html' -f $PSScriptRoot,$newname) -Append -Force
         }
     }
     else
     {
+        #errors with processing a file, skip it
         Write-Output ('{2} Continuing, found {0} new {1} files' -f $ciafiles.Count,$fileType,$(Get-Date -Format s))
     }
 }
 
 function checkmake-folder ([string] $folderName)
 {
+    #Just had to create some folders, and wanted to test if they existed first, this was to save 10 lines of code...worth it?
     if(!(test-path $folderName))
     {
         New-Item -ItemType Directory -Force -Path $folderName
@@ -332,81 +334,196 @@ function checkmake-folder ([string] $folderName)
 
 }
 
-function make-mainpage
+function make-mainpage ([string] $myIP)
 {
+    #There probably is a better way, but html is forviging, so writing to a .html file as a text file, with correct tags but probably poor formatting
+
+    
+    #Rebuild page every time, so when I add custom background support it's easier to allow
     Write-Output ('{0} Making Index Page' -f $(Get-Date -Format s))
     '<html>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Force
-    '<header>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '<head>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
     '<title>3DS Game Directory</title>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-    '</header>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-    '<body>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-    $3dshtmlfiles = Get-ChildItem "$PSScriptRoot\html\*" -Include 3ds*.html
-    if($3dshtmlfiles.Count -gt 0 )
+
+    #This is for changing the images for boxart and QR code without a page reload, just a reload of those images
+    '<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '<script type="text/javascript">'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '$(document).ready(function(){'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '$("select.games").change(function(){'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    'var selectedGame = $(this).children("option:selected").val();'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '    document.getElementById("qr").src=selectedGame'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '});'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '});'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '</script>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+    #Yay for a crappy favion
+    '<link rel="shortcut icon" type="image/png" href="/images/favicon.png"/>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+    '</head>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+    #get the list of game files with all details
+    $3dsCiafiles = Get-ChildItem "$PSScriptRoot\cias\*" -Include *.cia
+    if($3dsCiafiles.Count -gt 0 )
     {            
-    
-        '<body>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-        Write-Output ('{1} Creating main page, found {0} HTML files' -f $3dshtmlfiles.Count,$(Get-Date -Format s))   
-        '<h1>3DS Games</h1><br>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-        foreach ($3dshtmlfile in $3dshtmlfiles)
-        { 
-            ('- <a href="html/{0}">{0}</a><br>'-f $3dshtmlfile.name )|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        #add some styling for the main page area
+        #'<style> .content {position: absolute;top: 30%;}'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+        '<style> .content {max-width: 1000px;margin: auto;}'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        #.centered { position: fixed;  top: 50%;  left: 50%; }' |out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force       
+        '</style>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        
+        #yay a background, thanks to Thanks to Pixabay for the background image on pexels (free use) - https://www.pexels.com/photo/macro-photography-of-mario-and-luigi-plastic-toy-163157/
+        '<body style="background: #D0E4F5 url(''/images/background.jpg'') no-repeat local 0 0;background-size:cover">'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '<div class="content" background="white">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+        #quick to rebuild so, the time loss isn't too bad...if things extend maybe we add a "file check, if older than X days" part
+        Write-Output ('{1} Creating main page, found {0} game files' -f $3dsCiafiles.Count,$(Get-Date -Format s))   
+        
+        #hacky way to move the content area down a few rows....smarter web designers welcome to fix :D
+        '<p>&nbsp;</p><p>&nbsp;</p>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+        #kinda looks likes something from homebrew channel lol...
+        '<div align="center" style="color: #FFFFFF;font-family:sans-serf;background: #0e8dbc;font-size:60px;font-weight:bold;text-shadow: 0 1px 0 #CCCCCC, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0,0,0,.1), 0 0 5px rgba(0,0,0,.1), 0 1px 3px rgba(0,0,0,.3), 0 3px 5px rgba(0,0,0,.2), 0 5px 10px rgba(0,0,0,.25), 0 10px 10px rgba(0,0,0,.2), 0 20px 20px rgba(0,0,0,.15);">miiShop</div>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '<div style="background-color:rgba(255, 255, 255, 0.75);">'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+        #Ugg...Title, or no title, I say not right now...
+        #'<br>&nbsp;</br><p><h1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Library</h1></p>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        
+        
+
+
+        #Here's the tables (gulp, not divs) for the game list, game info, boxart and QR code
+        '<table style="width: 100%;padding: 30px;">'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '<tr><td>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '<select class="games" size="20">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+        foreach($3dsCiafile in $3dsCiafiles)
+        {        
+            #Make game names display in the list as more readable, and removing our reformatting.  This is starting to scream get a SQL lite DB or something to store this list...as it will get bigger
+            $gameDisplayName = $3dsCiafile.name
+            $gameQR = ('{0}.png' -f $3dsCiafile.name)
+            $gameDisplayName = $gameDisplayName.replace('.cia','')
+            $gameDisplayName = $gameDisplayName.replace('_',' ')
+            $gameDisplayName = $gameDisplayName.replace(' US','')
+            $gameDisplayName = $gameDisplayName.replace(' USA','')
+            $gameDisplayName = $gameDisplayName.replace(' DEC','')
+            $gameDisplayName = $gameDisplayName.replace(' EU','')
+            $gameDisplayName = $gameDisplayName.replace('(US)','')
+            $gameDisplayName = $gameDisplayName.replace('(EUR)','')
+            $gameDisplayName = $gameDisplayName.replace('(USA)','')
+            $gameDisplayName = $gameDisplayName.replace('(RF)','')            
+            $gameDisplayName = $gameDisplayName.replace('EUR','')
+            #Add QR codes to the values
+            ('<option value="qr/{0}">{1}</option>' -f $gameQR ,$gameDisplayName ) | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
         }
+        #thanks for the fake boxart found here - https://imgur.com/4AxEWvV
+        #Thanks so much to W3schools for teaching me so much about styling (yeah I should use style sheets or something, I get it...)
+        '</td> <td align="center"  style="border: 30px solid #DFE7EA;border-radius: 15px 15px 15px 15px;background: url(/images/test.jpg); background-size: 100% 100%; background-repeat: no-repeat;">'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        
+        #oh god this hack...invisible text to keep the table a consistent width...there HAS to be a better way but...well any port in a storm currently
+        '<p id="art" style="color: white;visibility: hidden;"><-------------------------------------></p>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+
+        #Cool trick to make a 1x1 pixel image from a base64 encoded gif,no file necessary..this is nuts folks...full credit ->https://css-tricks.com/snippets/html/base64-encode-of-1x1px-transparent-gif/
+        '<img id="qr" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '</td> </tr>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force    
+        
+        #hey, doesn't this kinda look like a 3DS game?  Well it kinda does...it;s pretty cool
+        '<tr><td background="white">'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force            
+        '<p id="info" align="center">Game info coming soon!</p>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '</select>' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '</table>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force    
+        
+        #closing out time!
+        
+        '</div>' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force  
+        '<br><br>' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
      }   
+     '</div>' |out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
      '</body>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
      '</html>'|out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force  
 }
 
 
-
+#get a start date, formatted for files
 $dateFormat = 'M-d-y-hh_mm_ss'
 $date=(get-date).ToString($dateFormat)
 
+#making folders with my make folder if doesn't exist function
 ('{0} Creating folders as needed' -f $(Get-Date -Format s))
 checkmake-folder -folderName "$PSScriptRoot\logs"
+checkmake-folder -folderName "$PSScriptRoot\logs\web"
 checkmake-folder -folderName "$PSScriptRoot\cias"
 checkmake-folder -folderName "$PSScriptRoot\qr"
-checkmake-folder -folderName "$PSScriptRoot\html"
+checkmake-folder -folderName "$PSScriptRoot\images"
+checkmake-folder -folderName "$PSScriptRoot\boxart"
 
-#Start Transcript
+#Start Transcript logging for what the window says
 Start-Transcript -Path ('{0}\logs\MiiShop{1}.log' -f $PSScriptRoot, $date) 
-$internalIPs = get-netipaddress -AddressFamily IPv4 
-Write-Output '=================Your IP Addresses================='
-foreach($internalIP in $internalIPs)
-{
-    write-output ('ID = {0}, IP = {1}' -f $internalIP.InterfaceIndex,$internalIP.IPAddress)
-} 
-Write-Output '==================================================='
-$userID = read-host 'Which ID is the correct one for the IP Address from your internal network?  If you are unsure, choose one that starts with 192.168.XXX.XXXX, or 10.XXX.XXX.XXX. '
+
+#Yay no more needing to try picking your local IP.  Seems to work for me even with a firewall
+write-host ('{0} Detecting Local IP address, this may take a few seconds' -f $(Get-Date -Format s))
+$myIPaddy= (
+    Get-NetIPConfiguration |
+    Where-Object {
+        $_.IPv4DefaultGateway -ne $null -and
+        $_.NetAdapter.Status -ne "Disconnected"
+    }
+).IPv4Address.IPAddress
+
+('{0} Setting Webserver address to {1}' -f $(Get-Date -Format s),$myIPaddy)
+('{0} Managing Data' -f $(Get-Date -Format s))
+#Legacy - no need to re-activate, not using multiple child pages for games now.  Nice and neat on one page
+#get-cias -ipAddress $myIPaddy
+
+#make the main page
+make-mainpage -myIP $myIPaddy
+
+#check/make firewall rules, currently windows only, add OS check to verify if i run this or do something with firewalld on linux/mac
+('{0} Adding firewalls exception if needed' -f $(Get-Date -Format s))
+
 try
 {
-    $myIP= get-netipaddress -AddressFamily IPv4 -InterfaceIndex $userID
+    #this should check if the rule exists, if it doesn't exist it will error, sending us to catch it by making the rule.  Easies way is the wrong way folks!
+    Get-NetFirewallRule -DisplayName 'MiiShop Web port - In' -ErrorAction SilentlyContinue | Out-Null
+    ('{0} Inbound rule already exists, skipping' -f $(Get-Date -Format s))
 }
 catch
 {
-    Write-Output ('Error with selected choice, please re-start the script and try again.' -f $userID)
-    break;
-}
-('{0} Setting Webserver address to {1}' -f $(Get-Date -Format s),$myIP.IPAddress)
-('{0} Managing Data' -f $(Get-Date -Format s))
-get-cias -ipAddress $myIP.IPAddress
-
-make-mainpage
-
-('{0} Adding firewalls exception if needed' -f $(Get-Date -Format s))
-$testResults=Test-NetConnection -port 8080
-if($testResults.TcpTestSuccess -eq $false)
-{
+    #Add in rule for local network
     netsh advfirewall firewall add rule name="MiiShop Web port - In" dir=in action=allow protocol=TCP localport=8080 | Out-Null
+}
+try
+{
+    #Copy-paste - this should check if the rule exists, if it doesn't exist it will error, sending us to catch it by making the rule.  Easies way is the wrong way folks!
+    Get-NetFirewallRule -DisplayName 'MiiShop Web port - Out'  -ErrorAction SilentlyContinue | Out-Null
+    ('{0} Outbound rule already exists, skipping' -f $(Get-Date -Format s))
+}
+catch
+{
+    #Add in rule for local network
     netsh advfirewall firewall add rule name="MiiShop Web port - Out" dir=out action=allow protocol=TCP localport=8080 | Out-Null
 }
 
 
-('{0} Open your browser to http://{1}:8080/main.html to see the game list' -f $(Get-Date -Format s),$myIP.IPAddress)
+#Build local server URL
+$serverURL=('http://{0}:8080/main.html' -f $myIPaddy)
 
-$scriptPath = ('{0}\start-webserver.ps1' -f $PSScriptRoot)
-$argumentList = ('"http://{0}:8080/"' -f $myIP.IPAddress)
+#legacy web server that wasn't made for this use, don't use unless you REALLY want issues
+#$scriptPath = ('{0}\Start-WebServer.ps1' -f $PSScriptRoot)
+#$argumentList = ('"http://{0}:8080/"' -f $myIPaddy)
 
+
+#PoSHServer made as a more robust powershell webserver, and more extensable
+$scriptPath = ('{0}\PoSHServer-Standalone.ps1' -f $PSScriptRoot)
+$argumentList = ('-IP {0} -Port 8080 -HomeDirectory "{1}" -LogDirectory "{1}\logs\web"' -f $myIPaddy,$PSScriptRoot)
+write-output -InputObject $scriptPath
+write-output -inputobject $argumentList
+
+#lets kick some tires, and light some fires, it's web server time!
 Invoke-Expression "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe $scriptPath $argumentList"
 
+#well crud, I shouldn't try local client browser launch... these lines will be deleted next upload
+#('{0} Opening your browser to {1} to see the game list' -f $(Get-Date -Format s),$myIPaddy)
+#& $serverURL
 
+#When the script is stopped, or the web server crashes, stop logging.  This should catch the error inthe log!
 Stop-Transcript
