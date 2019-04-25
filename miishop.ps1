@@ -362,21 +362,17 @@ function make-mainpage ([string] $myIP)
         Write-Output ('{0} Backing up prior main.html' -f $(Get-Date -Format s))
         $dateFormat = 'M-d-y-hh_mm_ss'
         $date=(get-date).ToString($dateFormat)
-        Move-Item .\main.html ".\main.$date.html" #-ErrorAction SilentlyContinue
+        Move-Item .\main.html "$PSScriptRoot\backup\main.$date.html" #-ErrorAction SilentlyContinue
+        
+        
+        
+        #Write-Output ('{0} deleteing backups from older than 7 days' -f $(Get-Date -Format s))
     }
     else
     {        
         Write-Output ('{0} No main.html exists, begin file creation' -f $(Get-Date -Format s))
     }
      
-    #if(!(test-path "$PSScriptRoot\main.html"))
-    #{
-    #$dateFormat = 'M-d-y-hh_mm_ss'
-    #$date=(get-date).ToString($dateFormat)
-    #Move-Item .\main.html ".\main.$date.html" -ErrorAction SilentlyContinue
-    #}
-
-
     #There probably is a better way, but html is forviging, so writing to a .html file as a text file, with correct tags but probably poor formatting
 
     
@@ -485,25 +481,28 @@ function make-mainpage ([string] $myIP)
         #Here's the tables (gulp, not divs) for the game list, game info, boxart and QR code
         '<table style="width: 100%;padding: 30px;">'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
         '<tr><td width=60%>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-        '<select class="games" size="20">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+        '<select class="games" size="20" style="width:80%">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
         '<option value="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7|None|None|None|./images/test.jpg "> None</option>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force  
         [xml]$XmlDocument=Get-Content -Path 'E:\Downloads\3dsgames\database\3dsreleases.xml'
         
         write-output ('{0} Checking for gameinfo and boxart (this can take a bit)' -f $(Get-Date -Format s))
+        $gameCount=0
         foreach($3dsCiafile in $3dsCiafiles)
-        {    
-           
+        {               
             #Make game names display in the list as more readable, and removing our reformatting.  
             $gameDisplayName = get-CleanGamename($3dsCiafile.name)
+            $gameCount++
+            write-output ('{0} Searching Game info, and box art for {1} ({2} of {3})' -f $(Get-Date -Format s),$gameDisplayName,$gameCount,$3dsCiafiles.Length )
             $gameQR = ('qr/{0}.png' -f $3dsCiafile.name)
 
             #Build Game info
             $3dsdb = 'xZ1'
             $gbatemp='t8F'
-            $name=''
+            $name=$gameDisplayName
             
             foreach($game in $XmlDocument.releases.release)
             {
+                #break up name for a like search, take care of catch characters or keywords
                 $searchName = $gameDisplayName.replace(' ','*' )                
                 $searchName = $searchName.replace('*-*','*')
                 $searchName = $searchName.replace('-','*')
@@ -524,6 +523,7 @@ function make-mainpage ([string] $myIP)
             } 
             if($3dsdb -eq 'found')
             {
+                #Match to see if we can find the optimal link for showing the image, in future store this somewhere
                 $imgFiles = @()
                 $imgFiles = ("https://art.gametdb.com/3ds/coverHQ/US/$imgFile.jpg", "https://art.gametdb.com/3ds/coverHQ/EN/$imgFile.jpg","https://art.gametdb.com/3ds/coverHQ/other/$imgFile.jpg","https://art.gametdb.com/3ds/coverHQ/NL/$imgFile.jpg",,"https://art.gametdb.com/3ds/coverHQ/RU/$imgFile.jpg",,"https://art.gametdb.com/3ds/coverHQ/FR/$imgFile.jpg","https://art.gametdb.com/3ds/coverHQ/DE/$imgFile.jpg","https://art.gametdb.com/3ds/coverHQ/ES/$imgFile.jpg","https://art.gametdb.com/3ds/coverHQ/JA/$imgFile.jpg", "https://art.gametdb.com/3ds/coverHQ/PT/$imgFile.jpg" )
                 $bestMatch = ''
@@ -546,6 +546,7 @@ function make-mainpage ([string] $myIP)
                         #Write-Output ('{0} - boo catch!' -f $imgFile)
                     }
                 }
+                #If we match use the name and image we match with, if not use scrubbed game name, and test image
                 if($bestMatch -ne '')
                 {
                     $gameQR=('{0}|{1}|{2}|{3}|{4}'-f $gameQR,$name,$publisher,$serial,$bestMatch)
@@ -585,16 +586,13 @@ function make-mainpage ([string] $myIP)
 
 
             #Add QR codes to the values
-            ('<option value="{0}">{1}</option>' -f $gameQR ,$gameDisplayName ) | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
+            ('<option value="{0}">{1}</option>' -f $gameQR ,$name ) | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
             
         }
         #thanks for the fake boxart found here - https://imgur.com/4AxEWvV
         #Thanks so much to W3schools for teaching me so much about styling (yeah I should use style sheets or something, I get it...)
         
         '</select></td> <td id="imgBoxArt" align="center" style="border: 30px solid #DFE7EA;border-radius: 15px 15px 15px 15px;background: white url(./images/test.jpg); width:40%;background-size: 100% 100%; background-repeat: no-repeat;">'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-        
-        #oh god this hack...invisible text to keep the table a consistent width...there HAS to be a better way but...well any port in a storm currently fixed, with width percentages!...removing the next check in
-        #'<p id="art" style="color: white;visibility: hidden;"><-------------------------------------></p>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
 
         #Cool trick to make a 1x1 pixel image from a base64 encoded gif,no file necessary..this is nuts folks...full credit ->https://css-tricks.com/snippets/html/base64-encode-of-1x1px-transparent-gif/
         '<img id="qr" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
@@ -649,6 +647,7 @@ checkmake-folder -folderName "$PSScriptRoot\qr"
 checkmake-folder -folderName "$PSScriptRoot\images"
 #checkmake-folder -folderName "$PSScriptRoot\boxart" - Hey found a direct link from online to use, (Thanks https://www.gametdb.com!), will re-enable in future "bandwidth safe release"
 checkmake-folder -folderName "$PSScriptRoot\database"
+checkmake-folder -folderName "$PSScriptRoot\backup"
 
 #Start Transcript logging for what the window says
 Start-Transcript -Path ('{0}\logs\MiiShop_{1}.log' -f $PSScriptRoot, $date) 
@@ -693,15 +692,6 @@ else
 }
 
 
-
-#write-output ('{0} Checking if we need to update the databases' -f $(Get-Date -Format s))
-#if((Get-ChildItem "$PSScriptRoot\database\3dsreleases.xml").CreationTime -ge (Get-Date).AddDays(-7))
-#{
-#write-output ('{0} Database does not exist or is over a week old, downloading game database' -f $(Get-Date -Format s))
-#Invoke-WebRequest -uri 'http://ptrk25.github.io/GroovyFX/database/community.xml'-OutFile "E:\Downloads\3dsgames\database\community.xml"
-#Invoke-WebRequest -uri 'http://3dsdb.com/xml.php'-OutFile "E:\Downloads\3dsgames\database\3dsreleases.xml"
-#}
-
 #make the main page
 make-mainpage -myIP $myIPaddy
 
@@ -713,33 +703,6 @@ $in = Get-NetFirewallRule -DisplayName 'MiiShop Web port - In' 2> $null; if ($in
 #New firewall check/create - Inbound
 $out = Get-NetFirewallRule -DisplayName 'MiiShop Web port - Out' 2> $null; if ($out) { write-output ('{0} Outbound rule already exists, skipping' -f $(Get-Date -Format s)); } else { write-output ('{0} Outbound rule does not exists, creating it' -f $(Get-Date -Format s));netsh advfirewall firewall add rule name="MiiShop Web port - Out" dir=out action=allow protocol=TCP localport=8080 | Out-Null; }
 
-#Old and busted - Doesn't work, remove after next check in
-#try
-#{
-    #this should check if the rule exists, if it doesn't exist it will error, sending us to catch it by making the rule.  Easies way is the wrong way folks!
-
-    #$value = Get-NetFirewallRule -DisplayName 'MiiShop Web port - In' -ErrorAction SilentlyContinue | Out-Null
-    #Write-Output $value
-    #('{0} Inbound rule already exists, skipping' -f $(Get-Date -Format s))
-#}
-#catch
-#{
- #   #Add in rule for local network
-#    netsh advfirewall firewall add rule name="MiiShop Web port - In" dir=in action=allow protocol=TCP localport=8080 | Out-Null
-#}
-#try
-#{
-#    #Copy-paste - this should check if the rule exists, if it doesn't exist it will error, sending us to catch it by making the rule.  Easies way is the wrong way folks!
-#    Get-NetFirewallRule -DisplayName 'MiiShop Web port - Out'  -ErrorAction SilentlyContinue | Out-Null
-#    ('{0} Outbound rule already exists, skipping' -f $(Get-Date -Format s))
-#}
-#catch
-#{
-#    #Add in rule for local network
-#    netsh advfirewall firewall add rule name="MiiShop Web port - Out" dir=out action=allow protocol=TCP localport=8080 | Out-Null
-#}
-
-
 #Build local server URL
 $serverURL=('http://{0}:8080/main.html' -f $myIPaddy)
 
@@ -747,11 +710,8 @@ $serverURL=('http://{0}:8080/main.html' -f $myIPaddy)
 $scriptPath = ('{0}\PoSHServer-Standalone.ps1' -f $PSScriptRoot)
 $argumentList = ('-IP {0} -Port 8080 -HomeDirectory "{1}" -LogDirectory "{1}\logs\web"' -f $myIPaddy,$PSScriptRoot)
 
-
 #lets kick some tires, and light some fires, it's web server time!
 Invoke-Expression "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe $scriptPath $argumentList"
-
-
 
 #When the script is stopped, or the web server crashes, stop logging.  This should catch the error inthe log!
 Stop-Transcript
