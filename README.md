@@ -6,9 +6,7 @@ Manages a basic 3DS backup file library and creates pages for each game, with QR
 ![miiShop v0.2 UI](https://i.imgur.com/64eoQnD.png "miiShop v0.2 UI")
 
 ## Instructions
-1. Download `images` folder, `miishop.ps1`, `PoSHServer-Standalone.ps1`, and `start.bat` (installer script coming soon)
-2. Copy the folder and all 3 files to the folder where you keep the 3DS CIAs from games you own (check your favorite serch engine how to do that)
-3. Right click on start.bat and select run as administrator (required to open the ports to serve the webpages)
+1. Use [miiShop_install](https://github.com/Engarak/miiShop_Install/releases) to upgrade or install miiShop
 
 ## Known Issues
 + ~~Webserver crashing - On some transferrs it seems to crash, as I didn't write the webserver I haven't been brave enough to jump in and try to fix it or switch to a different simple server~~ **Fixed with PoSHServer**
