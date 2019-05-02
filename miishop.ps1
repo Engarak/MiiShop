@@ -483,7 +483,7 @@ function make-mainpage ([string] $myIP)
         '<tr><td width=60%>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
         '<select class="games" size="20" style="width:80%">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
         '<option value="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7|None|None|None|./images/test.jpg "> None</option>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force  
-        [xml]$XmlDocument=Get-Content -Path 'E:\Downloads\3dsgames\database\3dsreleases.xml'
+        [xml]$XmlDocument=Get-Content -Path "$PSScriptRoot\database\3dsreleases.xml"
         
         write-output ('{0} Checking for gameinfo and boxart (this can take a bit)' -f $(Get-Date -Format s))
         $gameCount=0
@@ -560,7 +560,7 @@ function make-mainpage ([string] $myIP)
             # Can't get both databases to work without one clobbering the other, and it's REALLY slow to search both.  Disabling GBA temp community DB for now as I get better matches with the 3dsdb, and more information
             #elseif ($3dsdb -eq 'xZ1')
             #{
-            #    [xml]$XmlDocument=Get-Content -Path 'E:\Downloads\3dsgames\database\community.xml'
+            #    [xml]$XmlDocument=Get-Content -Path "$PSScriptRoot\database\community.xml"
             #    foreach($game in $XmlDocument.database.Ticket)
             #    {
             #        if ($game.name -eq $gameDisplayName)
@@ -672,7 +672,7 @@ get-cias -ipAddress $myIPaddy
 $createDate = (Get-Date).AddDays(-55)
 try
 {
-    $createDate = (Get-ChildItem "E:\Downloads\3dsgames\database\3dsreleases.xml" -ErrorAction SilentlyContinue).CreationTime 
+    $createDate = (Get-ChildItem "$PSScriptRoot\database\3dsreleases.xml" -ErrorAction SilentlyContinue).CreationTime 
 }
 catch
 {
@@ -682,9 +682,11 @@ catch
 if( $createDate -le (Get-Date).AddDays(-7))
 {
     write-output ('{0} Database does not exist or is over a week old, downloading/updating game database' -f $(Get-Date -Format s))
-    #Invoke-WebRequest -uri 'http://ptrk25.github.io/GroovyFX/database/community.xml'-OutFile "E:\Downloads\3dsgames\database\community.xml"
-
-    Invoke-WebRequest -uri 'http://3dsdb.com/xml.php'-OutFile "E:\Downloads\3dsgames\database\3dsreleases.xml"
+    #Invoke-WebRequest -uri 'http://ptrk25.github.io/GroovyFX/database/community.xml'-OutFile "$PSScriptRoot\database\community.xml"
+    
+    
+     
+    Invoke-WebRequest -uri 'http://3dsdb.com/xml.php'-OutFile "$PSScriptRoot\database\3dsreleases.xml"
 }
 else
 {
@@ -711,7 +713,7 @@ $scriptPath = ('{0}\PoSHServer-Standalone.ps1' -f $PSScriptRoot)
 $argumentList = ('-IP {0} -Port 8080 -HomeDirectory "{1}" -LogDirectory "{1}\logs\web"' -f $myIPaddy,$PSScriptRoot)
 
 #lets kick some tires, and light some fires, it's web server time!
-Invoke-Expression "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe $scriptPath $argumentList"
+Invoke-Expression "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe '$scriptPath' $argumentList"
 
 #When the script is stopped, or the web server crashes, stop logging.  This should catch the error inthe log!
 Stop-Transcript
