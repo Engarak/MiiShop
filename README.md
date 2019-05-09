@@ -1,5 +1,8 @@
 # MiiShop
-Manages a basic 3DS backup file library and creates pages for each game, with QR code to reload your own games. Requires your 3DS to be altered, and able to run FBI.  It comes with the initialization script I made that manages the library, uses PoSHServer (http://www.poshserver.net/) and uses the New-QR function taken from here (https://gallery.technet.microsoft.com/scriptcenter/f615d7e8-ed15-498d-b7cc-078377f523bf). 
+~~Manages a basic 3DS backup file library and creates pages for each game, with QR code to reload your own games. Requires your 3DS to be altered, and able to run FBI.~~
+
+It's a PC based management system and library for legal backups of your 3DS software, with functions to reinstall your software via QR codes you can scan in FBI. (thanks /u/Level44EnderShaman on reddit! Much better description)
+It comes with the initialization script I made that manages the library, uses PoSHServer (http://www.poshserver.net/) and uses the New-QR function taken from here (https://gallery.technet.microsoft.com/scriptcenter/f615d7e8-ed15-498d-b7cc-078377f523bf). 
 
 
 ## Screenshots
@@ -10,7 +13,7 @@ miiShop v0.2 UI - A real UI!
 
 
 ## Upgrade/Install Instructions
-1. (Pending testing 4/25/2019) - Use [miiShop_install](https://github.com/Engarak/miiShop_Install/releases) to upgrade or install miiShop 
+1. Worked for me (4/30/19), one report of issues, rethinking install/upgrade process - Use [miiShop_install](https://github.com/Engarak/miiShop_Install/releases) to upgrade or install miiShop still for now though!
 
 ## Known Issues
 + Errors with special characters when processing library - At times in the console when processing games it will toss an error on the specific game.  Open an issue and get me the error message I'll try to catch the case in a future version.
