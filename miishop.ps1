@@ -1,5 +1,5 @@
-﻿#Requires -RunAsAdministrator
-
+﻿#Requires -RunAsAdministrator 
+#Requires -version 5.1
 # BIG thanks to Matt Painter for this code on Script Cener in Microsoft Tech Net - 'https://gallery.technet.microsoft.com/scriptcenter/f615d7e8-ed15-498d-b7cc-078377f523bf'
 # Requires the internet because of this call, maybe see if I can find a way to build a QR code without.  But that's way off at this point.
 
@@ -482,7 +482,7 @@ function make-mainpage ([string] $myIP)
         '<table style="width: 100%;padding: 30px;">'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
         '<tr><td width=60%>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
         '<select class="games" size="20" style="width:80%">' | out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force
-        '<option value="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7|None|None|None|./images/test.jpg "> None</option>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force  
+        #'<option value="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7|None|None|None|./images/test.jpg "> None</option>'| out-file -FilePath ('{0}\main.html' -f $PSScriptRoot) -Append -Force  
         [xml]$XmlDocument=Get-Content -Path "$PSScriptRoot\database\3dsreleases.xml"
         
         write-output ('{0} Checking for gameinfo and boxart (this can take a bit)' -f $(Get-Date -Format s))
@@ -499,28 +499,34 @@ function make-mainpage ([string] $myIP)
             $3dsdb = 'xZ1'
             $gbatemp='t8F'
             $name=$gameDisplayName
-            
+            $noneCount= 0
             foreach($game in $XmlDocument.releases.release)
             {
-                #break up name for a like search, take care of catch characters or keywords
-                $searchName = $gameDisplayName.replace(' ','*' )                
-                $searchName = $searchName.replace('*-*','*')
-                $searchName = $searchName.replace('-','*')
-                $searchName = $searchName.replace('.','*')
-                $searchName = $searchName.replace('&','&amp;')
-                $searchName = $searchName.replace('*and*','*')
-                $searchName = $searchName.replace('**','*')
-                #write-output $searchName
-                if (($game.name -like ('*{0}*'-f $searchName )) -and (!$game.Name.Contains("DEMO")))
-                {
-                    $name=$game.name
-                    $publisher=$game.publisher
-                    $serial=$game.serial
-                    $code,$imgFile=$game.serial.split('-')                   
-                    $3dsdb='found'
-                    break
+                
+                    #break up name for a like search, take care of catch characters or keywords
+                    $searchName = $gameDisplayName.replace(' ','*' )                
+                    $searchName = $searchName.replace('*-*','*')
+                    $searchName = $searchName.replace('-','*')
+                    $searchName = $searchName.replace('.','*')
+                    $searchName = $searchName.replace('&','&amp;')
+                    $searchName = $searchName.replace('*and*','*')
+                    $searchName = $searchName.replace('**','*')
+                    #write-output $searchName
+                    if (($game.name -like ('*{0}*'-f $searchName )) -and (!$game.Name.Contains("DEMO")))
+                    {
+                        $name=$game.name
+                        $publisher=$game.publisher
+                        $serial=$game.serial
+                        $code,$imgFile=$game.serial.split('-')                   
+                        $3dsdb='found'
+                        break
+                    }
                 }
             } 
+            if($noneCount=0)
+            {
+              "Hello" | out-file -FilePath "$psscriptroot\cias\none.cia"
+            }
             if($3dsdb -eq 'found')
             {
                 #Match to see if we can find the optimal link for showing the image, in future store this somewhere
@@ -709,11 +715,12 @@ $out = Get-NetFirewallRule -DisplayName 'MiiShop Web port - Out' 2> $null; if ($
 $serverURL=('http://{0}:8080/main.html' -f $myIPaddy)
 
 #PoSHServer made as a more robust powershell webserver, and more extensable
-$scriptPath = ('{0}\PoSHServer-Standalone.ps1' -f $PSScriptRoot)
-$argumentList = ('-IP {0} -Port 8080 -HomeDirectory "{1}" -LogDirectory "{1}\logs\web"' -f $myIPaddy,$PSScriptRoot)
+$scriptPath = ('"{0}\PoSHServer-Standalone.ps1"' -f $PSScriptRoot)
+#$argumentList = ('-IP {0} -Port 8080 -HomeDirectory "{1}" -LogDirectory "{1}\logs\web"' -f $myIPaddy,$PSScriptRoot)
+$argumentList=''
 
 #lets kick some tires, and light some fires, it's web server time!
-Invoke-Expression "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe '$scriptPath' $argumentList"
+Invoke-Expression "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe $scriptPath $argumentList"
 
 #When the script is stopped, or the web server crashes, stop logging.  This should catch the error inthe log!
 Stop-Transcript
