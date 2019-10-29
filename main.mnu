@@ -1,0 +1,5 @@
+Section,Method,Command,Arguments,Name,Description
+First Time Setup,powershell_file,.\bin\nginxSetup.ps1,-windowstyle minimized,1. Install <LineBreak /> Webserver,Installs up the webserver to run miiShop
+First Time Setup,powershell_file,.\bin\makeMain.ps1,-windowstyle minimized,2. Create/Rebuild <LineBreak /> Main Page,Creates or rebuilds the main web page for miiShop
+Management,powershell_file,.\bin\startmiiShop.ps1,-windowstyle minimized,Start <LineBreak /> miiShop Web,Starts the miiShop webserver and opens the webpage in the default browser
+Configuration,powershell_file,.\bin\settings.ps1,-windowstyle minimized,Configure <LineBreak /> miiShop,Configures miiShop and webserver settings (Advanced)
