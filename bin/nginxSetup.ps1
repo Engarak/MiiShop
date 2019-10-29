@@ -104,6 +104,7 @@ else if([System.Environment]::OSVersion.Platform -eq 'Unix')
 $outputBox = New-Object System.Windows.Forms.TextBox 
 $outputBox.Location = New-Object System.Drawing.Size(10,10) 
 $outputBox.Size = New-Object System.Drawing.Size(565,300) 
+$outputBox.ReadOnly = $True
 $outputBox.MultiLine = $True 
 #$outputBox.ScrollBars = "Vertical" 
 $Form.Controls.Add($outputBox) 

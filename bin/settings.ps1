@@ -84,6 +84,7 @@ $outputBox.width                 = 353
 $outputBox.height                = 218
 $outputBox.location              = New-Object System.Drawing.Point(24,136)
 $outputBox.Font                  = 'Microsoft Sans Serif,10'
+$outputBox.ReadOnly              = $True
 
 ############################################## end text fields
 $cboDatabase                     = New-Object system.Windows.Forms.ComboBox

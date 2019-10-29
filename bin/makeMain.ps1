@@ -876,6 +876,7 @@ $outputBox.Location = New-Object System.Drawing.Size(10,10)
 $outputBox.Size = New-Object System.Drawing.Size(565,300) 
 $outputBox.MultiLine = $True 
 $outputBox.ScrollBars = "Vertical" 
+$outputBox.ReadOnly = $True
 $Form.Controls.Add($outputBox) 
 
 ############################################## end text fields
