@@ -25,7 +25,7 @@ function Write-OutLog
         $outputBox.text=$outputMessage 
 
         #output to log file
-        $outputMessage | out-file -FilePath $outputLog -Append
+        $message | out-file -FilePath $outputLog -Append
 
         #refresh form
         $Form.Refresh()
@@ -38,7 +38,7 @@ function Write-OutLog
         $outputBox.Text=$outputMessage
 
         #output to log file
-        $outputMessage | out-file -FilePath $outputLog -Append
+        $message | out-file -FilePath $outputLog -Append
 
         #refresh form
         $Form.Refresh()
@@ -71,15 +71,19 @@ function get-settings
 }
 
 function start-miiShop
-{
+{    
+    Set-Location $PSScriptRoot
     #Get settings
     $settings = get-settings 
     $port=$settings.Where({$PSItem.Name -eq 'port'}).Value
     $debug=$settings.Where({$PSItem.Name -eq 'debug'}).Value
+    # Saved for future use
+    <#
     $gamePath=$settings.Where({$PSItem.Name -eq 'gamePath'}).Value
     $backgroundPath =$settings.Where({$PSItem.Name -eq 'backgroundPath'}).Value
     $gameDB = $settings.Where({$PSItem.Name -eq 'gameDB'}).Value
     $rebuild = 1
+    #>
 
     #Get IP
     Write-OutLog -message 'Obtaining Local IP'
@@ -100,7 +104,7 @@ function start-miiShop
         Write-OutLog -message "dir to change to $changePath"
         #pause
     }
-    cd $changePath
+    Set-Location $changePath
     Start-Process $svrPath -PassThru
 
 }
@@ -114,12 +118,12 @@ function stop-miiShop
         Write-OutLog -message 'Stopping miiShop server'
         Stop-Process -Name nginx -Force -Confirm:$false -ErrorAction SilentlyContinue
         Write-OutLog -message 'miiShop is not running, goodbye!'
-        cd "$miiShopRoot\bin"
+        Set-Location "$miiShopRoot\bin"
     }
     else
     {
         Write-OutLog -message 'miiShop is not running, goodbye!'
-        cd "$miiShopRoot\bin"
+        Set-Location "$miiShopRoot\bin"
     }
 
 

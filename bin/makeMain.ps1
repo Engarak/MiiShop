@@ -12,24 +12,53 @@ $Form.Icon = $icoPath
 $Form.AutoScroll=$True
 $dateFormat = 'M-d-y-hh_mm_ss'
 $date=(get-date).ToString($dateFormat)
-$outputLog = "..\logs\miiShop_$date.log"
+$outputLog = "..\logs\makemain_$date.log"
+############################################## Start text fields
+
+$outputBox = New-Object System.Windows.Forms.TextBox 
+$outputBox.Location = New-Object System.Drawing.Size(10,10) 
+$outputBox.Size = New-Object System.Drawing.Size(565,300) 
+$outputBox.MultiLine = $True 
+$outputBox.ScrollBars = "Vertical" 
+$outputBox.ReadOnly = $True
+$Form.Controls.Add($outputBox) 
+
+############################################## end text fields
+
+############################################## Start buttons
+
+$btnStart = New-Object System.Windows.Forms.Button 
+$btnStart.Location = New-Object System.Drawing.Size(175,325) 
+$btnStart.Size = New-Object System.Drawing.Size(110,30) 
+$btnStart.Text = "&Create page" 
+$btnStart.Add_Click({start-makingpage}) 
+
+$btnClose = New-Object System.Windows.Forms.Button 
+$btnClose.Location = New-Object System.Drawing.Size(300,325) 
+$btnClose.Size = New-Object System.Drawing.Size(110,30) 
+$btnClose.Text = "&Close" 
+$btnClose.Add_Click({$Form.Close()}) 
+$Form.Controls.AddRange(@($btnClose,$btnStart)) 
+
+
+############################################## end buttons
 ############################################## Start functions
 
 function Write-OutLog
 {
     param($message)
-    if($outputBox.text -eq '')
-    {
+    #if($outputBox.text -eq '')
+    #{
         #output to text box (empty)
-        $outputMessage = ('{0} - {1}' -f $(get-date -Format 'yyyy-MM-dd HH:mm:ss') ,$message)    
-        $outputBox.text=$outputMessage 
+        $outputMessage = ('{0} - {1} {2}' -f $(get-date -Format 'yyyy-MM-dd HH:mm:ss') ,$message,"`r`n")   
+        $outputBox.AppendText($outputMessage) 
 
         #output to log file
-        $outputMessage | out-file -FilePath $outputLog -Append
+        $message | out-file -FilePath $outputLog -Append
 
         #refresh form
         $Form.Refresh()
-    }
+    <#}
     else
     {
         #output to text box (1 row or more already in box)
@@ -38,11 +67,11 @@ function Write-OutLog
         $outputBox.Text=$outputMessage
 
         #output to log file
-        $outputMessage | out-file -FilePath $outputLog -Append
+        $message | out-file -FilePath $outputLog -Append
 
         #refresh form
         $Form.Refresh()
-    }
+    }#>
     
 }
 
@@ -93,18 +122,16 @@ function get-settings
 {
     Write-OutLog -message 'Checking for settings file'
     $settingsPath=('{0}\database\settings.csv' -f $miiShopRoot)
-    $dateFormat = 'M-d-y-hh_mm_ss'
-    $date=(get-date).ToString($dateFormat)
     if(Test-Path $settingsPath)
     {
-        Write-OutLog -message 'Settings file found, backing up and resetting to default'
-        Move-Item '..\database\settings.csv' "..\backup\settings_$date.csv"
+        Write-OutLog -message 'Settings file found, importing settings'
+        $settings = import-csv $settingsPath
     }
         Write-OutLog -message 'Settings file not found, creating file'
         'Name,Value,Purpose'| out-file -FilePath $settingsPath -force
         'port,80,"webserver port"'| out-file -FilePath $settingsPath -Append
         'debug,0,"a value with additional logging if needed in an error (0, no debugging, 1, with debugging).  Saved for future use(3-MAY-19)"'| out-file -FilePath $settingsPath -Append
-        ('backgroundPath,{0},"Location of background image"' -f ".\nginx\html\images\background.png") | out-file -FilePath $settingsPath -Append
+        ('backgroundPath,{0},"Location of background image"' -f "background.jpg") | out-file -FilePath $settingsPath -Append
         ('gameDB,{0},""Location of database to match game library against (valid values: 3dsreleases.xml(default) or community.xml) (thanks to http://www.3dsdb.com/ and Madridi for access to the gbatemp community game database - https://gbatemp.net/members/madridi.124719/)" (valid values:{0}(default) or {1})"' -f "..\database\3dsreleases.xml","..\database\community.xml") | out-file -FilePath $settingsPath -Append
         $settings = Import-Csv $settingsPath
 
@@ -426,12 +453,21 @@ function get-CleanGamename ([String] $inputGame)
 function make-mainpage ([string] $myIP, [string]$backgroundPath)
 {
     $settings = get-settings 
-    Copy-Item '..\images\*.*' '.\nginx\html\images'
     $port=$settings.Where({$PSItem.Name -eq 'port'}).Value
     $debug=$settings.Where({$PSItem.Name -eq 'debug'}).Value
-    $gamePath=$settings.Where({$PSItem.Name -eq 'gamePath'}).Value
     $backgroundPath =$settings.Where({$PSItem.Name -eq 'backgroundPath'}).Value
     $gameDB = $settings.Where({$PSItem.Name -eq 'gameDB'}).Value   
+
+    #move over legacy CIA's if they exist and backup old files we no longer need
+    if(test-path '..\cias')
+    {
+        Write-OutLog 'Found legacy cias folder, migrating contents'
+        Move-Item '..\cias\*.*' '.\nginx\html\cias'  -Force -Confirm:$false -ErrorAction SilentlyContinue
+        Move-Item '..\cias' '..\backup' -Force -Confirm:$false -ErrorAction SilentlyContinue
+        Move-Item '..\qr' '..\backup' -Force -Confirm:$false -ErrorAction SilentlyContinue
+        Move-Item '..\PoSHServer-Standalone.ps1' '..\backup\PoSHServer-Standalone.ps1' -ErrorAction SilentlyContinue
+        Move-Item '..\config.ps1' '..\backup\config.ps1' -ErrorAction SilentlyContinue
+    }
     if(test-path '.\nginx\html\main.html')
     {
         Write-OutLog -message 'Backing up prior main.html'
@@ -451,7 +487,6 @@ function make-mainpage ([string] $myIP, [string]$backgroundPath)
     else
     {        
         Write-OutLog -message 'No main.html exists, begin file creation'
-        #pause #debugging
     }
      
     #There probably is a better way, but html is forviging, so writing to a .html file as a text file, with correct tags but probably poor formatting
@@ -484,12 +519,7 @@ function make-mainpage ([string] $myIP, [string]$backgroundPath)
     '<link rel="shortcut icon" type="image/png" href="./images/favicon.png"/>'|out-file -FilePath '.\nginx\html\main.html' -Append -Force
     '</head>'|out-file -FilePath '.\nginx\html\main.html' -Append -Force
 
-    #move over legacy CIA's if they exist
-    if(test-path '.\cias')
-    {
-        Write-OutLog 'Found legacy cias folder, migrating contents'
-        copy-item '\cias\*.*' '.\bin\nginx\html\cias\*.*'
-    }
+    
 
 
 
@@ -546,7 +576,7 @@ function make-mainpage ([string] $myIP, [string]$backgroundPath)
         '</style>'|out-file -FilePath '.\nginx\html\main.html' -Append -Force
         
         #yay a background, thanks to Thanks to Pixabay for the background image on pexels (free use) - https://www.pexels.com/photo/macro-photography-of-mario-and-luigi-plastic-toy-163157/
-        ('<body style="background: #D0E4F5 url(''{0}'') no-repeat local 0 0;background-size:cover">' -f $backgroundPath)|out-file -FilePath '.\nginx\html\main.html' -Append -Force
+        ('<body style="background: #D0E4F5 url(''./images/{0}'') no-repeat local 0 0;background-size:cover">' -f $backgroundPath)|out-file -FilePath '.\nginx\html\main.html' -Append -Force
         '<div class="content" background="white">' | out-file -FilePath '.\nginx\html\main.html' -Append -Force
 
         #quick to rebuild so, the time loss isn't too bad...if things extend maybe we add a "file check, if older than X days" part
@@ -809,35 +839,31 @@ function get-cias
 }
 
 function start-makingpage
-{
+{    
+    Set-Location $PSScriptRoot
     if(test-path '.\nginx')
     {
-        
-        $settingsPath=('{0}\database\settings.csv' -f (get-item $PSScriptRoot).Parent.FullName)
-        #pause #debugging
+        #$settingsPath=('{0}\database\settings.csv' -f (get-item $PSScriptRoot).Parent.FullName)
         $settings = get-settings 
+        #For future use
+        <# 
         $port=$settings.Where({$PSItem.Name -eq 'port'}).Value
         $debug=$settings.Where({$PSItem.Name -eq 'debug'}).Value
         $gamePath=$settings.Where({$PSItem.Name -eq 'gamePath'}).Value
-        #append images path, this way the user just supplies the image file
+        append images path, this way the user just supplies the image file 
+        #>
         $backgroundPath =('./images/{0}' -f $settings.Where({$PSItem.Name -eq 'backgroundPath'}).Value)
         $gameDB = $settings.Where({$PSItem.Name -eq 'gameDB'}).Value
-        $rebuild = 1
 
         #making folders with my make folder if doesn't exist function
-        write-outlog -message 'Creating folders as needed'
+        write-outlog -message 'Creating folders as needed and populating data'
         checkmake-folder -folderName "..\logs"
         checkmake-folder -folderName ".\nginx\html\cias"
         checkmake-folder -folderName ".\nginx\html\qr"
         checkmake-folder -folderName ".\nginx\html\images"
         checkmake-folder -folderName "..\database"
         checkmake-folder -folderName "..\backup"
-
-
-
-        Write-OutLog -message 'Managing Data'
-        $fileType='*.cia'
-        $ciafiles = Get-ChildItem "..\*" -Include $fileType
+        Copy-Item '..\images\*.*' '.\nginx\html\images'
 
         Write-OutLog -message 'Obtaining Local IP'
         $myIPaddy='127.0.0.1'
@@ -853,10 +879,6 @@ function start-makingpage
         {
             Invoke-WebRequest -uri 'http://3dsdb.com/xml.php'-OutFile "..\database\$gameDB"
         }
-
-
-        $configChange = 1
-
         #make or remake the main page
         make-mainpage -myIP $myIPaddy -backgroundPath $backgroundPath
     }
@@ -868,36 +890,6 @@ function start-makingpage
 }
 
 ############################################## end functions
-
-############################################## Start text fields
-
-$outputBox = New-Object System.Windows.Forms.TextBox 
-$outputBox.Location = New-Object System.Drawing.Size(10,10) 
-$outputBox.Size = New-Object System.Drawing.Size(565,300) 
-$outputBox.MultiLine = $True 
-$outputBox.ScrollBars = "Vertical" 
-$outputBox.ReadOnly = $True
-$Form.Controls.Add($outputBox) 
-
-############################################## end text fields
-
-############################################## Start buttons
-
-$btnStart = New-Object System.Windows.Forms.Button 
-$btnStart.Location = New-Object System.Drawing.Size(175,325) 
-$btnStart.Size = New-Object System.Drawing.Size(110,30) 
-$btnStart.Text = "&Create page" 
-$btnStart.Add_Click({start-makingpage}) 
-
-$btnClose = New-Object System.Windows.Forms.Button 
-$btnClose.Location = New-Object System.Drawing.Size(300,325) 
-$btnClose.Size = New-Object System.Drawing.Size(110,30) 
-$btnClose.Text = "&Close" 
-$btnClose.Add_Click({$Form.Close()}) 
-$Form.Controls.AddRange(@($btnClose,$btnStart)) 
-
-
-############################################## end buttons
-
+############################################## Launch Form
 $Form.Add_Shown({$Form.Activate()})
 [void] $Form.ShowDialog()

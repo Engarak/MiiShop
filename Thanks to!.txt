@@ -1,0 +1,10 @@
+## Thanks to Pixabay for the background image (free use)
+  +https://www.pexels.com/photo/macro-photography-of-mario-and-luigi-plastic-toy-163157/
+## NGINX
+  +https://nginx.org/
+## weebsnore
+https://github.com/weebsnore/PowerShell-Script-Menu-Gui
+## 3DSDB
+http://www.3dsdb.com/ 
+## Madridi - Access to the gbatemp community game database 
+https://gbatemp.net/members/madridi.124719/

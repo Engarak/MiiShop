@@ -73,7 +73,7 @@ $txtDebug.Font                   = 'Microsoft Sans Serif,10'
 
 $txtBGPath                       = New-Object system.Windows.Forms.TextBox
 $txtBGPath.multiline             = $false
-$txtBGPath.width                 = 236
+$txtBGPath.width                 = 235
 $txtBGPath.height                = 20
 $txtBGPath.location              = New-Object System.Drawing.Point(150,74)
 $txtBGPath.Font                  = 'Microsoft Sans Serif,10'
@@ -88,7 +88,7 @@ $outputBox.ReadOnly              = $True
 
 ############################################## end text fields
 $cboDatabase                     = New-Object system.Windows.Forms.ComboBox
-$cboDatabase.width               = 150
+$cboDatabase.width               = 235
 $cboDatabase.height              = 20
 $cboDatabase.location            = New-Object System.Drawing.Point(150,102)
 $cboDatabase.Font                = 'Microsoft Sans Serif,10'
@@ -118,7 +118,7 @@ $grpSettings.controls.AddRange(@($Label1,$Label2,$Label3,$Label4,$txtPort,$txtDe
 
 $dateFormat = 'M-d-y-hh_mm_ss'
 $date=(get-date).ToString($dateFormat)
-$outputLog = "..\logs\miiShop_$date.log"
+$outputLog = "..\logs\settings_$date.log"
 function Write-OutLog
 {
     param($message)
@@ -129,7 +129,7 @@ function Write-OutLog
         $outputBox.text=$outputMessage 
 
         #output to log file
-        $outputMessage | out-file -FilePath $outputLog -Append
+        $message | out-file -FilePath $outputLog -Append
 
         #refresh form
         $frmSettings.Refresh()
@@ -142,7 +142,7 @@ function Write-OutLog
         $outputBox.Text=$outputMessage
 
         #output to log file
-        $outputMessage | out-file -FilePath $outputLog -Append
+        $message | out-file -FilePath $outputLog -Append
 
         #refresh form
         $frmSettings.Refresh()
@@ -218,7 +218,7 @@ function get-settings
         'Name,Value,Purpose'| out-file -FilePath $settingsPath -force
         'port,80,"webserver port"'| out-file -FilePath $settingsPath -Append
         'debug,0,"a value with additional logging if needed in an error (0, no debugging, 1, with debugging).  Saved for future use(3-MAY-19)"'| out-file -FilePath $settingsPath -Append
-        ('backgroundPath,{0},"Location of background image"' -f ".\nginx\html\images\background.png") | out-file -FilePath $settingsPath -Append
+        'backgroundPath,background.jpg,"Location of background image"'| out-file -FilePath $settingsPath -Append
         ('gameDB,{0},""Location of database to match game library against (valid values: 3dsreleases.xml(default) or community.xml) (thanks to http://www.3dsdb.com/ and Madridi for access to the gbatemp community game database - https://gbatemp.net/members/madridi.124719/)" (valid values:{0}(default) or {1})"' -f "..\database\3dsreleases.xml","..\database\community.xml") | out-file -FilePath $settingsPath -Append
         $settings = Import-Csv $settingsPath
     }
@@ -227,6 +227,7 @@ function get-settings
 }
 function Start-Config
 {
+    Set-Location $PSScriptRoot
     #load function to get the settings and put them in the form elements
     $settings = get-settings
     $port=$settings.Where({$PSItem.Name -eq 'port'}).Value
@@ -236,8 +237,8 @@ function Start-Config
     $txtPort.Text=$port
     $txtDebug.Text=$debug
     $txtBGPath.Text=$backgroundPath
-    $cboDatabase.Items.Add('3dsreleases.xml')
-    $cboDatabase.Items.Add('community.xml')
+    $cboDatabase.Items.Add('..\database\3dsreleases.xml')
+    $cboDatabase.Items.Add('..\database\community.xml')
     $cboDatabase.Text=$gameDB
 
 }
