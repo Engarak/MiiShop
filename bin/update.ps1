@@ -55,7 +55,8 @@ function Start-Update
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Engarak/MiiShop/master/bin/nginxSetup.ps1" -OutFile '.\nginxSetup.ps1'
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Engarak/MiiShop/master/bin/settings.ps1" -OutFile '.\settings.ps1'
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Engarak/MiiShop/master/bin/startmiiShop.ps1" -OutFile '.\startmiiShop.ps1'
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Engarak/MiiShop/master/miiShop.ps1" -OutFile '.\miiShop.ps1'
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Engarak/MiiShop/master/miiShop.ps1" -OutFile '..\miiShop.ps1'
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Engarak/MiiShop/master/start.bat" -OutFile '..\start.bat'
     Write-OutLog -message 'Downloading completed.  Please close out all miiShop windows and re-launch it.'
     
 }
